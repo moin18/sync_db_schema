@@ -2,6 +2,7 @@ import db_conf
 import subprocess
 import os
 from sqlparser import SQLParser
+import constants
 
 
 class DBUtils(object):
@@ -15,26 +16,25 @@ class DBUtils(object):
         self.schema2 = {}
 
     def create_backup_file(self):
-        subprocess.check_call(['mysqldump', '-h', self.db1['host'],
-                                            ' -u', self.db1['user'],
-                                            '-p%s' % self.db1['password'],
-                                            '--skip-comments', '--skip-extended-insert', '--skip-data',
-                                            self.db1['name'], '>', self.db1_sql_file])
-        subprocess.check_call(['mysqldump', '-h', self.db2['host'],
-                                            ' -u', self.db2['user'],
-                                            '-p%s' % self.db2['password'],
-                                            '--skip-comments', '--skip-extended-insert', '--skip-data',
-                                            self.db2['name'], '>', self.db1_sql_file])
+        # Create Backup of database 1
+        subprocess.check_call(constants.MYSQLDUMP_CMD.format(host=self.db1['host'], user=self.db1['user'], password=self.db1['password'], 
+            db=self.db1['name'], backup_file=self.db1_sql_file), shell=True)
+        # Create Backup of database 2
+        subprocess.check_call(constants.MYSQLDUMP_CMD.format(host=self.db2['host'], user=self.db2['user'], password=self.db2['password'], 
+            db=self.db2['name'], backup_file=self.db2_sql_file), shell=True)
 
     def remove_backup_file(self):
-        os.remove(self.db1_sql_file)
-        os.remove(self.db1_sql_file)
+        if os.path.exists(self.db1_sql_file):
+            os.remove(self.db1_sql_file)
+        if os.path.exists(self.db2_sql_file):
+            os.remove(self.db1_sql_file)
 
     def show_sql_file_diff(self):
-        subprocess.check_call(['diff', self.db1_sql_file, self.db2_sql_file])
+        subprocess.call(['diff', self.db1_sql_file, self.db2_sql_file])
 
     def _get_db_diff(self):
         self.schema1 = SQLParser(self.db1_sql_file).get_db_schema()
+        print self.schema1
         self.schema2 = SQLParser(self.db2_sql_file).get_db_schema()
         schema_diff = {}
         for table1 in self.schema1:

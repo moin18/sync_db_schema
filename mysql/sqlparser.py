@@ -1,5 +1,4 @@
 import re
-import mmap
 
 
 class SQLParser(object):
@@ -9,12 +8,12 @@ class SQLParser(object):
         self._file_content = None
 
         # Load sql file
-        with open(self.db1_sql_file, 'r') as f:
-            self._file_content = mmap.mmap(f.fileno(), 0)
+        with open(self.sql_file, 'r') as f:
+            self._file_content = f.read()
 
     def get_tables(self):
         tables = re.findall('CREATE TABLE (.*\n?)\(', self._file_content, re.MULTILINE)
-        return tables
+        return [table.strip('` ') for table in tables]
 
     def get_table_info(self, table):
         table_data = re.find('CREATE TABLE {table_name} (.*\n?)\)\n\))'.format(table), self._file_content, re.MULTILINE)
